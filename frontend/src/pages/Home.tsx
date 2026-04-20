@@ -126,31 +126,6 @@ export function Home() {
         </div>
       )}
 
-      {/* Top links */}
-      {metrics && metrics.top_links.length > 0 && (
-        <div className="mt-6 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900/50 px-6 py-4">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-            {t("metrics.topLinks")}
-          </p>
-          <ul className="space-y-2">
-            {metrics.top_links.map((lnk) => (
-              <li key={lnk.short_code} className="flex items-center justify-between gap-3 text-sm">
-                <a
-                  href={lnk.short_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="min-w-0 truncate font-mono text-brand-600 dark:text-brand-400 hover:underline"
-                >
-                  {lnk.short_url}
-                </a>
-                <span className="shrink-0 rounded-full bg-brand-50 dark:bg-brand-900/40 px-2 py-0.5 text-xs font-bold text-brand-700 dark:text-brand-300">
-                  {lnk.clicks.toLocaleString()}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }
