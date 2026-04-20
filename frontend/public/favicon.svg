@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <rect width="32" height="32" rx="14" fill="#e0117e"/>
+  <path fill="white" stroke="rgba(255,255,255,0.35)" stroke-width="0.5" d="M8 12c0-2.2 1.8-4 4-4h3v2.5H12c-.8 0-1.5.7-1.5 1.5v7c0 .8.7 1.5 1.5 1.5h3V24h-3c-2.2 0-4-1.8-4-4v-8zm16 4v4c0 2.2-1.8 4-4 4h-3v-2.5h3c.8 0 1.5-.7 1.5-1.5v-7c0-.8-.7-1.5-1.5-1.5h-3V8h3c2.2 0 4 1.8 4 4v4z"/>
+</svg>

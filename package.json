@@ -1,0 +1,14 @@
+{
+  "name": "texticulo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "backend": "cd backend && go run .",
+    "frontend": "cd frontend && npm run dev",
+    "dev": "concurrently -n backend,frontend -c blue,green \"npm run backend\" \"npm run frontend\"",
+    "install:all": "cd frontend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

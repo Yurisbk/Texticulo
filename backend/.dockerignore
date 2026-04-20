@@ -1,0 +1,6 @@
+texticulo.exe
+*.exe
+dev.db
+.env
+.git
+.gitignore

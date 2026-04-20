@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply min-h-screen bg-slate-50 text-slate-900 antialiased;
+  @apply dark:bg-slate-950 dark:text-slate-100;
+}
+
+.logo-text {
+  -webkit-text-stroke: 1.5px rgba(191, 14, 105, 0.35);
+  text-shadow: 0 2px 12px rgba(224, 17, 126, 0.25);
+}
+
+.dark .logo-text {
+  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.25);
+  text-shadow: 0 2px 16px rgba(255, 20, 147, 0.45);
+}

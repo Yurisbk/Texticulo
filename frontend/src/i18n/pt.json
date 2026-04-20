@@ -1,0 +1,64 @@
+{
+  "app": {
+    "name": "Texticulo",
+    "tagline": "Encurte links em segundos."
+  },
+  "nav": {
+    "home": "Início",
+    "dashboard": "Meus links",
+    "login": "Entrar",
+    "logout": "Sair"
+  },
+  "home": {
+    "title": "URL gigantes convertidas em textos pequenos",
+    "placeholder": "Cole o link aqui (https://...)",
+    "submit": "Encurtar",
+    "result": "Seu link curto",
+    "copy": "Copiar",
+    "copied": "Copiado!",
+    "error": "Não foi possível encurtar. Verifique o link.",
+    "rateLimit": "Muitas tentativas. Tente daqui a pouco.",
+    "linkLimit": "Você atingiu o limite de 5 links. Exclua um para criar outro.",
+    "hintLogin": "Entre na sua conta para guardar o histórico de links."
+  },
+  "auth": {
+    "loginTitle": "Entrar",
+    "oauthSubtitle": "Use sua conta Google ou Microsoft.",
+    "googleLogin": "Entrar com Google",
+    "microsoftLogin": "Entrar com Microsoft",
+    "oauthError": "Não foi possível concluir o login. Tente novamente.",
+    "oauthDenied": "Login cancelado no provedor."
+  },
+  "dashboard": {
+    "title": "Meus links",
+    "empty": "Você ainda não criou nenhum link logado.",
+    "original": "URL original",
+    "short": "Link curto",
+    "clicks": "Cliques",
+    "created": "Criado em",
+    "stats": "Ver estatísticas",
+    "delete": "Excluir",
+    "deleteConfirm": "Excluir este link?",
+    "loadError": "Não foi possível carregar os links.",
+    "deleteError": "Não foi possível excluir o link.",
+    "recentClicks": "Últimos cliques (registro)",
+    "usage": "{{count}}/5 links usados",
+    "yourClicks": "Total de cliques"
+  },
+  "metrics": {
+    "links": "links criados",
+    "clicks": "cliques totais",
+    "clicksToday": "cliques hoje",
+    "users": "usuários",
+    "topLinks": "Links mais acessados",
+    "last7days": "Cliques nos últimos 7 dias"
+  },
+  "notFound": {
+    "title": "Página não encontrada",
+    "back": "Voltar ao início"
+  },
+  "lang": {
+    "pt": "PT",
+    "en": "EN"
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "app": {
+    "name": "Texticulo",
+    "tagline": "Shorten links in seconds."
+  },
+  "nav": {
+    "home": "Home",
+    "dashboard": "My links",
+    "login": "Log in",
+    "logout": "Log out"
+  },
+  "home": {
+    "title": "Big URLs converted into tiny links",
+    "placeholder": "Paste your link here (https://...)",
+    "submit": "Shorten",
+    "result": "Your short link",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "error": "Could not shorten. Check the URL.",
+    "rateLimit": "Too many attempts. Try again shortly.",
+    "linkLimit": "You've reached the limit of 5 links. Delete one to create another.",
+    "hintLogin": "Log in to keep a history of your links."
+  },
+  "auth": {
+    "loginTitle": "Log in",
+    "oauthSubtitle": "Sign in with Google or Microsoft.",
+    "googleLogin": "Continue with Google",
+    "microsoftLogin": "Continue with Microsoft",
+    "oauthError": "Could not complete sign-in. Try again.",
+    "oauthDenied": "Sign-in was cancelled."
+  },
+  "dashboard": {
+    "title": "My links",
+    "empty": "You have not created any links while logged in yet.",
+    "original": "Original URL",
+    "short": "Short link",
+    "clicks": "Clicks",
+    "created": "Created",
+    "stats": "View stats",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this link?",
+    "loadError": "Could not load links.",
+    "deleteError": "Could not delete link.",
+    "recentClicks": "Recent clicks (log)",
+    "usage": "{{count}}/5 links used",
+    "yourClicks": "Total clicks"
+  },
+  "metrics": {
+    "links": "links created",
+    "clicks": "total clicks",
+    "clicksToday": "clicks today",
+    "users": "users",
+    "topLinks": "Most accessed links",
+    "last7days": "Clicks in the last 7 days"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "back": "Back to home"
+  },
+  "lang": {
+    "pt": "PT",
+    "en": "EN"
+  }
+}

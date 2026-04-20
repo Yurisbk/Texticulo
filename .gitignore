@@ -1,0 +1,24 @@
+# Secrets — nunca commitar (use apenas .env.example como modelo)
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+
+# Manter exemplos versionados
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+
+# Build e deps
+backend/*.exe
+backend/dev.db
+node_modules
+frontend/node_modules
+frontend/dist
+
+# Chaves e ferramentas locais
+*.pem
+*.key
+.vercel
+.DS_Store
