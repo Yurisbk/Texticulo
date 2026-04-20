@@ -5,8 +5,8 @@ COPY go.mod ./
 RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /texticulo .
-# Run (distroless or alpine — static binary works on distroless)
-FROM gcr.io/distroless/static-debian12:nonroot
+# base-debian12 inclui CA certs para TLS (MongoDB Atlas)
+FROM gcr.io/distroless/base-debian12:nonroot
 WORKDIR /
 COPY --from=builder /texticulo /texticulo
 ENV PORT=8080

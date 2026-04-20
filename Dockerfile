@@ -7,7 +7,8 @@ RUN go mod download
 COPY backend/ .
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /texticulo .
 
-FROM gcr.io/distroless/static-debian12:nonroot
+# base-debian12 inclui CA certs (Atlas TLS falha com static puro: tls: internal error)
+FROM gcr.io/distroless/base-debian12:nonroot
 WORKDIR /
 COPY --from=builder /texticulo /texticulo
 ENV PORT=8080

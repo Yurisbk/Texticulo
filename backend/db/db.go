@@ -12,16 +12,26 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+func sanitizeMongoURI(uri string) string {
+	uri = strings.TrimSpace(uri)
+	uri = strings.Trim(uri, `"'`)
+	return uri
+}
+
 func Open() (*mongo.Database, error) {
-	uri := strings.TrimSpace(os.Getenv("MONGODB_URI"))
+	uri := sanitizeMongoURI(os.Getenv("MONGODB_URI"))
 	if uri == "" {
 		uri = "mongodb://localhost:27017"
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	opts := options.Client().ApplyURI(uri).
+		SetServerSelectionTimeout(30 * time.Second).
+		SetConnectTimeout(20 * time.Second)
+
+	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
 		return nil, fmt.Errorf("mongo connect: %w", err)
 	}
