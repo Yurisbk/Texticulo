@@ -73,6 +73,12 @@ No [Google Cloud Console](https://console.cloud.google.com/), credenciais OAuth,
 
 Você pode começar com URLs `*.fly.dev` e `*.vercel.app` e depois adicionar os domínios finais sem remover os antigos durante a transição.
 
+## Render.com (Docker)
+
+Se o **Root Directory** do serviço for a **raiz do repositório** (monorepo), use o [`Dockerfile`](../Dockerfile) na raiz: ele copia `backend/` e faz o build. **Dockerfile Path:** `Dockerfile` (raiz).
+
+Se preferir **Root Directory = `backend`**, use só o [`backend/Dockerfile`](../backend/Dockerfile) e **Dockerfile Path:** `Dockerfile`.
+
 ## 7. Ordem prática
 
 1. Push seguro ao Git (sem `.env`).
