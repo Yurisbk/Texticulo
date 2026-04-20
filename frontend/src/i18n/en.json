@@ -23,9 +23,8 @@
   },
   "auth": {
     "loginTitle": "Log in",
-    "oauthSubtitle": "Sign in with Google or Microsoft.",
+    "oauthSubtitle": "Sign in with your Google account.",
     "googleLogin": "Continue with Google",
-    "microsoftLogin": "Continue with Microsoft",
     "oauthError": "Could not complete sign-in. Try again.",
     "oauthDenied": "Sign-in was cancelled."
   },

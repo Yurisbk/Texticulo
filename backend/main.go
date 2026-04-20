@@ -36,11 +36,9 @@ func main() {
 			frontendURL = strings.TrimSpace(parts[0])
 		}
 	}
-	googleCfg, msCfg := handlers.NewOAuthConfigs()
 	oauth := &handlers.OAuthHandler{
 		DB:          database,
-		Google:      googleCfg,
-		Microsoft:   msCfg,
+		Google:      handlers.NewGoogleOAuthConfig(),
 		FrontendURL: frontendURL,
 	}
 
@@ -69,8 +67,6 @@ func main() {
 		r.Get("/metrics", metricsHandler.Metrics)
 		r.Get("/auth/google", oauth.GoogleStart)
 		r.Get("/auth/google/callback", oauth.GoogleCallback)
-		r.Get("/auth/microsoft", oauth.MicrosoftStart)
-		r.Get("/auth/microsoft/callback", oauth.MicrosoftCallback)
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.AuthRequired)
 			r.Get("/auth/me", auth.Me)

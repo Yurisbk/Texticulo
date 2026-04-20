@@ -47,7 +47,6 @@ export function Login() {
   }, [searchParams, setSearchParams, setSession, navigate]);
 
   const googleHref = apiUrl("/api/auth/google");
-  const microsoftHref = apiUrl("/api/auth/microsoft");
 
   return (
     <div className="mx-auto max-w-md px-4 py-12">
@@ -89,19 +88,6 @@ export function Login() {
             />
           </svg>
           {t("auth.googleLogin")}
-        </a>
-
-        <a
-          href={microsoftHref}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-[#2F2F2F] py-3 font-semibold text-white shadow-sm hover:bg-[#404040] transition"
-        >
-          <svg className="h-5 w-5" viewBox="0 0 23 23" aria-hidden>
-            <path fill="#f35325" d="M1 1h10v10H1z" />
-            <path fill="#81bc06" d="M12 1h10v10H12z" />
-            <path fill="#05a6f0" d="M1 12h10v10H1z" />
-            <path fill="#ffba08" d="M12 12h10v10H12z" />
-          </svg>
-          {t("auth.microsoftLogin")}
         </a>
       </div>
     </div>

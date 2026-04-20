@@ -17,8 +17,8 @@ Este guia cobre: versionar sem chaves, escolha de infraestrutura, onde colocar s
 
 | Dado | Onde configurar |
 |------|-----------------|
-| `JWT_SECRET`, `MONGODB_URI`, `GOOGLE_CLIENT_SECRET`, `MICROSOFT_CLIENT_SECRET` | **Fly.io:** `fly secrets set ...` |
-| `GOOGLE_CLIENT_ID`, `MICROSOFT_CLIENT_ID` | Podem ir em `fly secrets` (recomendado) ou só no painel OAuth |
+| `JWT_SECRET`, `MONGODB_URI`, `GOOGLE_CLIENT_SECRET` | **Fly.io:** `fly secrets set ...` |
+| `GOOGLE_CLIENT_ID` | `fly secrets` (recomendado) ou só no Google Cloud Console |
 | `PUBLIC_API_URL`, `FRONTEND_URL` | `fly secrets` (URLs públicas, centralizam comportamento) |
 | `VITE_API_URL` | **Vercel:** Project → Settings → Environment Variables (build) |
 | Connection string Atlas | Só no backend (Fly); nunca no frontend |
@@ -65,12 +65,11 @@ Atualize variáveis:
 - `FRONTEND_URL=https://www.texticulo.io` (e CORS; pode listar `https://texticulo.io` se usar apex)
 - `VITE_API_URL=https://api.texticulo.io`
 
-## 6. OAuth (Google / Microsoft)
+## 6. OAuth (Google)
 
-Nos consoles de cada provedor, inclua os redirect URIs **exatos** da API em produção:
+No [Google Cloud Console](https://console.cloud.google.com/), credenciais OAuth, inclua o redirect URI **exato** da API em produção:
 
 - `https://api.texticulo.io/api/auth/google/callback`
-- `https://api.texticulo.io/api/auth/microsoft/callback`
 
 Você pode começar com URLs `*.fly.dev` e `*.vercel.app` e depois adicionar os domínios finais sem remover os antigos durante a transição.
 

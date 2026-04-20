@@ -23,9 +23,8 @@
   },
   "auth": {
     "loginTitle": "Entrar",
-    "oauthSubtitle": "Use sua conta Google ou Microsoft.",
+    "oauthSubtitle": "Entre com sua conta Google.",
     "googleLogin": "Entrar com Google",
-    "microsoftLogin": "Entrar com Microsoft",
     "oauthError": "Não foi possível concluir o login. Tente novamente.",
     "oauthDenied": "Login cancelado no provedor."
   },
