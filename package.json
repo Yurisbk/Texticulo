@@ -6,7 +6,8 @@
     "backend": "cd backend && go run .",
     "frontend": "cd frontend && npm run dev",
     "dev": "concurrently -n backend,frontend -c blue,green \"npm run backend\" \"npm run frontend\"",
-    "install:all": "cd frontend && npm install"
+    "install:all": "cd frontend && npm install",
+    "audit:secrets": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/check-no-secrets.ps1"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

@@ -17,7 +17,7 @@ Encurtador de URLs com **backend Go** (API + redirects) e **frontend React** (Vi
 ## Git sem chaves e deploy (texticulo.io)
 
 - **Nunca** commite arquivos `.env`; use apenas os arquivos `.env.example` como modelo. O [`.gitignore`](.gitignore) já ignora segredos comuns.
-- Antes do primeiro push, rode no PowerShell: `.\scripts\check-no-secrets.ps1`
+- Antes do primeiro push: `npm run audit:secrets` ou `.\scripts\check-no-secrets.ps1`
 - Guia completo (Hostinger DNS, Fly, Vercel, onde colocar cada segredo): **[`docs/DEPLOY-TEXTICULO.md`](docs/DEPLOY-TEXTICULO.md)**
 
 ## Desenvolvimento local (início rápido) 🚀
