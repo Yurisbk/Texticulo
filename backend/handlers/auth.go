@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 	"unicode"
@@ -20,6 +21,13 @@ import (
 type AuthHandler struct {
 	DB *mongo.Database
 }
+
+// dummyHash is a pre-computed bcrypt hash used to equalize login timing when
+// the requested email does not exist (A7 — timing attack prevention).
+var dummyHash = func() string {
+	h, _ := bcrypt.GenerateFromPassword([]byte("dummy-constant-texticulo"), 12)
+	return string(h)
+}()
 
 // ── account lockout (5 failures in 10 min → block) ───────────────────────────
 
@@ -64,6 +72,10 @@ func clearLockout(email string) {
 // ── input validation ──────────────────────────────────────────────────────────
 
 var emailRegex = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
+
+func normalizeEmail(e string) string {
+	return strings.ToLower(strings.TrimSpace(e))
+}
 
 func validPassword(p string) bool {
 	if len(p) < 8 {
@@ -116,6 +128,9 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error":"invalid_json"}`, http.StatusBadRequest)
 		return
 	}
+
+	req.Email = normalizeEmail(req.Email)
+
 	if !emailRegex.MatchString(req.Email) {
 		http.Error(w, `{"error":"invalid_email"}`, http.StatusBadRequest)
 		return
@@ -170,6 +185,8 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	req.Email = normalizeEmail(req.Email)
+
 	if isLockedOut(req.Email) {
 		http.Error(w, `{"error":"too_many_attempts"}`, http.StatusTooManyRequests)
 		return
@@ -185,14 +202,16 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	err := h.DB.Collection("users").FindOne(ctx, bson.M{"email": req.Email}).Decode(&user)
 	if err != nil {
-		// Same generic error for not-found and wrong-password to prevent enumeration
 		recordFailedLogin(req.Email)
+		// Always run bcrypt to equalise response time (A7 — timing attack).
+		_ = bcrypt.CompareHashAndPassword([]byte(dummyHash), []byte(req.Password))
 		http.Error(w, `{"error":"invalid_credentials"}`, http.StatusUnauthorized)
 		return
 	}
 
 	if user.PasswordHash == "" {
-		// Google-only account — no password was ever set
+		// Google-only account; run dummy bcrypt to keep timing consistent.
+		_ = bcrypt.CompareHashAndPassword([]byte(dummyHash), []byte(req.Password))
 		http.Error(w, `{"error":"use_google"}`, http.StatusUnauthorized)
 		return
 	}

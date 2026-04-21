@@ -115,7 +115,6 @@ export type MetricsResponse = {
   top_links: Array<{
     short_code: string;
     short_url: string;
-    original_url: string;
     clicks: number;
   }>;
   clicks_last_7_days: Array<{

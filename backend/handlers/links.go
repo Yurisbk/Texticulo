@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -21,6 +22,9 @@ import (
 )
 
 const base62 = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+// maxURLLen is the maximum accepted length for a destination URL.
+const maxURLLen = 2048
 
 type LinksHandler struct {
 	DB *mongo.Database
@@ -41,8 +45,6 @@ func publicBase() string {
 }
 
 // shortBase returns the domain used in displayed short URLs.
-// If SHORT_DOMAIN is set (e.g. "txt.io"), it builds "https://txt.io".
-// Otherwise falls back to publicBase().
 func shortBase() string {
 	d := strings.TrimSpace(os.Getenv("SHORT_DOMAIN"))
 	if d == "" {
@@ -55,24 +57,95 @@ func shortBase() string {
 	return "https://" + d
 }
 
-// isPrivateHost checks if a URL host resolves to a private/loopback IP (SSRF guard).
+// ── SSRF guard ────────────────────────────────────────────────────────────────
+
+// dangerousSchemes are explicitly rejected before any normalization.
+var dangerousSchemes = []string{
+	"file:", "gopher:", "dict:", "ftp:", "blob:", "data:",
+	"chrome:", "javascript:", "vbscript:", "ldap:", "mailto:", "tel:",
+}
+
+// blockedHostnames are cloud metadata / always-internal hostnames.
+var blockedHostnames = []string{
+	"metadata.google.internal",
+	"metadata.internal",
+	"metadata.aws.internal",
+	"169.254.169.254",
+}
+
+// altIPRe detects hex-encoded IP components (e.g. 0x7f.0x0.0x0.0x1).
+var altIPRe = regexp.MustCompile(`(?i)(^|\.)0x[0-9a-f]`)
+
+// looksLikeAltEncodedIP detects non-standard IP representations that Go's
+// net.ParseIP does not handle but browsers resolve to private addresses.
+func looksLikeAltEncodedIP(hostname string) bool {
+	// Hex components: 0x7f.0x0.0x0.0x1
+	if altIPRe.MatchString(hostname) {
+		return true
+	}
+	// Single large integer: 2130706433 (= 127.0.0.1 in decimal)
+	if !strings.ContainsAny(hostname, ".:[") {
+		allDigits := true
+		for _, c := range hostname {
+			if c < '0' || c > '9' {
+				allDigits = false
+				break
+			}
+		}
+		if allDigits && len(hostname) >= 8 {
+			return true
+		}
+	}
+	// Octal-encoded octets: 0177.0.0.1
+	for _, part := range strings.Split(hostname, ".") {
+		if len(part) > 1 && part[0] == '0' && part[1] >= '0' && part[1] <= '9' {
+			return true
+		}
+	}
+	return false
+}
+
+// ownDomains returns the set of hostnames operated by this service so that
+// shortener-chaining (txtcl.com/x → shorten txtcl.com/y) is blocked.
+func ownDomains() []string {
+	var hosts []string
+	if d := strings.TrimSpace(os.Getenv("SHORT_DOMAIN")); d != "" {
+		d = strings.TrimRight(strings.ToLower(d), "/")
+		if idx := strings.Index(d, "://"); idx >= 0 {
+			d = d[idx+3:]
+		}
+		hosts = append(hosts, d)
+	}
+	if d := strings.TrimSpace(os.Getenv("PUBLIC_API_URL")); d != "" {
+		if u, err := url.Parse(d); err == nil && u.Hostname() != "" {
+			hosts = append(hosts, strings.ToLower(u.Hostname()))
+		}
+	}
+	return hosts
+}
+
+// isPrivateHost checks whether a host resolves to a private/loopback IP.
 func isPrivateHost(host string) bool {
 	hostname := host
 	if h, _, err := net.SplitHostPort(host); err == nil {
 		hostname = h
 	}
+	// Strip IPv6 brackets
+	hostname = strings.Trim(hostname, "[]")
+
 	if ip := net.ParseIP(hostname); ip != nil {
-		return ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsMulticast()
+		return ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsMulticast() || ip.Equal(net.IPv4zero)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	addrs, err := net.DefaultResolver.LookupHost(ctx, hostname)
 	if err != nil {
-		return false
+		// Unresolvable hostname — reject to be safe
+		return true
 	}
 	for _, addr := range addrs {
 		if ip := net.ParseIP(addr); ip != nil {
-			if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() {
+			if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.Equal(net.IPv4zero) {
 				return true
 			}
 		}
@@ -82,19 +155,69 @@ func isPrivateHost(host string) bool {
 
 func normalizeURL(raw string) (string, bool) {
 	raw = strings.TrimSpace(raw)
-	if raw == "" {
+	if raw == "" || len(raw) > maxURLLen {
 		return "", false
 	}
-	if !strings.HasPrefix(raw, "http://") && !strings.HasPrefix(raw, "https://") {
+
+	lower := strings.ToLower(raw)
+
+	// Reject dangerous schemes explicitly before any prefix addition.
+	for _, ds := range dangerousSchemes {
+		if strings.HasPrefix(lower, ds) {
+			return "", false
+		}
+	}
+	// Any scheme that isn't http/https is rejected.
+	if strings.Contains(lower, "://") {
+		if !strings.HasPrefix(lower, "http://") && !strings.HasPrefix(lower, "https://") {
+			return "", false
+		}
+	}
+
+	if !strings.HasPrefix(lower, "http://") && !strings.HasPrefix(lower, "https://") {
 		raw = "https://" + raw
 	}
+
 	u, err := url.Parse(raw)
 	if err != nil || u.Host == "" {
 		return "", false
 	}
+	// Double-check scheme after parsing.
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return "", false
+	}
+	// Reject userinfo (user:pass@host) — SSRF bypass vector.
+	if u.User != nil {
+		return "", false
+	}
+
+	hostname := strings.ToLower(u.Hostname())
+
+	// Block 0.0.0.0 explicitly.
+	if hostname == "0.0.0.0" {
+		return "", false
+	}
+	// Block non-decimal IP representations browsers resolve to private ranges.
+	if looksLikeAltEncodedIP(hostname) {
+		return "", false
+	}
+	// Block known cloud metadata hostnames (DNS-based bypass prevention).
+	for _, blocked := range blockedHostnames {
+		if hostname == blocked || strings.HasSuffix(hostname, "."+blocked) {
+			return "", false
+		}
+	}
+	// Block shortener-chaining on own domains.
+	for _, own := range ownDomains() {
+		if hostname == own || strings.HasSuffix(hostname, "."+own) {
+			return "", false
+		}
+	}
+	// Block private/loopback IPs (including DNS-resolved ones).
 	if isPrivateHost(u.Host) {
 		return "", false
 	}
+
 	return u.String(), true
 }
 
@@ -277,7 +400,6 @@ func (h *LinksHandler) Stats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if link.UserID == nil || *link.UserID != oid {
-		// Return 404 instead of 403 to avoid resource enumeration
 		http.Error(w, `{"error":"not_found"}`, http.StatusNotFound)
 		return
 	}
@@ -359,7 +481,6 @@ func (h *LinksHandler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 // reservedShortCodes are codes the redirect handler must not process.
-// robots.txt and sitemap.xml are served by dedicated routes registered before /{code}.
 var reservedShortCodes = map[string]struct{}{
 	"api": {}, "health": {}, "favicon.ico": {}, "favicon.svg": {},
 }

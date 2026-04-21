@@ -63,6 +63,8 @@ func main() {
 	r.Use(chiMiddleware.Logger)
 	r.Use(chiMiddleware.Recoverer)
 	r.Use(middleware.SecurityHeaders)
+	// Limit all request bodies to 64 KB (C5/M10 — DoS prevention)
+	r.Use(middleware.MaxBodySize(64 * 1024))
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "OPTIONS", "PUT", "DELETE"},
@@ -95,15 +97,21 @@ func main() {
 	r.Get("/health", handlers.Health)
 
 	r.Route("/api", func(r chi.Router) {
-		r.Get("/metrics", metricsHandler.Metrics)
+		// All /api routes require application/json on mutations (A4 — CSRF via text/plain)
+		r.Use(middleware.RequireJSON)
 
-		// Google OAuth
+		// Metrics — requires auth to prevent leaking aggregated data (C1/C7)
+		r.With(middleware.AuthRequired).Get("/metrics", metricsHandler.Metrics)
+
+		// Google OAuth (GET — exempt from RequireJSON naturally)
 		r.Get("/auth/google", oauth.GoogleStart)
 		r.Get("/auth/google/callback", oauth.GoogleCallback)
 
-		// Email/password auth (public)
-		r.Post("/auth/register", auth.Register)
-		r.Post("/auth/login", auth.Login)
+		// Email/password auth — rate-limited per IP (A8)
+		registerLimiter := middleware.NewIPRateLimiter(10, time.Minute)
+		loginLimiter := middleware.NewIPRateLimiter(20, time.Minute)
+		r.With(registerLimiter).Post("/auth/register", auth.Register)
+		r.With(loginLimiter).Post("/auth/login", auth.Login)
 
 		// Authenticated routes
 		r.Group(func(r chi.Router) {
@@ -114,7 +122,7 @@ func main() {
 			r.Delete("/links/{code}", links.Delete)
 		})
 
-		// Shorten — auth optional, rate-limited to 15 req/min
+		// Shorten — auth optional, rate-limited to 15 req/min per IP
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.AuthOptional)
 			r.With(middleware.ShortenRateLimit(15, time.Minute)).Post("/shorten", links.Shorten)

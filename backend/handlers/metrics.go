@@ -16,10 +16,9 @@ type MetricsHandler struct {
 }
 
 type topLink struct {
-	ShortCode   string `json:"short_code"`
-	ShortURL    string `json:"short_url"`
-	OriginalURL string `json:"original_url"`
-	Clicks      int64  `json:"clicks"`
+	ShortCode string `json:"short_code"`
+	ShortURL  string `json:"short_url"`
+	Clicks    int64  `json:"clicks"`
 }
 
 type dayClicks struct {
@@ -66,9 +65,8 @@ func (h *MetricsHandler) Metrics(w http.ResponseWriter, r *http.Request) {
 	var topLinks []topLink
 	if err == nil {
 		var docs []struct {
-			ShortCode   string `bson:"short_code"`
-			OriginalURL string `bson:"original_url"`
-			Clicks      int64  `bson:"clicks"`
+			ShortCode string `bson:"short_code"`
+			Clicks    int64  `bson:"clicks"`
 		}
 		_ = topCursor.All(ctx, &docs)
 		for _, d := range docs {
@@ -76,10 +74,9 @@ func (h *MetricsHandler) Metrics(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			topLinks = append(topLinks, topLink{
-				ShortCode:   d.ShortCode,
-				ShortURL:    publicBase() + "/" + d.ShortCode,
-				OriginalURL: d.OriginalURL,
-				Clicks:      d.Clicks,
+				ShortCode: d.ShortCode,
+				ShortURL:  publicBase() + "/" + d.ShortCode,
+				Clicks:    d.Clicks,
 			})
 		}
 	}
