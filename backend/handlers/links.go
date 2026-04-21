@@ -147,14 +147,18 @@ func (h *LinksHandler) Shorten(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, `{"error":"server"}`, http.StatusInternalServerError)
 			return
 		}
+		now := time.Now().UTC()
 		doc := bson.M{
 			"short_code":   c,
 			"original_url": orig,
 			"clicks":       int64(0),
-			"created_at":   time.Now().UTC(),
+			"created_at":   now,
 		}
 		if userOID != nil {
 			doc["user_id"] = userOID
+		} else {
+			// Anonymous links expire after 48 hours via sparse TTL index on expires_at.
+			doc["expires_at"] = now.Add(48 * time.Hour)
 		}
 		_, err = h.DB.Collection("links").InsertOne(ctx, doc)
 		if err == nil {

@@ -90,12 +90,12 @@ func Migrate(database *mongo.Database) error {
 		return fmt.Errorf("clicks TTL index: %w", err)
 	}
 
-	// TTL index: anonymous links (no user_id) expire after 48 hours.
+	// TTL index: anonymous links expire via an explicit expires_at field set at insert time.
+	// Sparse=true so documents without the field (user-owned links) are ignored entirely.
+	// MongoDB does not support $exists:false in partial filter expressions, hence this approach.
 	anonLinksTTLIdx := mongo.IndexModel{
-		Keys: bson.D{{Key: "created_at", Value: 1}},
-		Options: options.Index().
-			SetExpireAfterSeconds(48 * 3600).
-			SetPartialFilterExpression(bson.D{{Key: "user_id", Value: bson.D{{Key: "$exists", Value: false}}}}),
+		Keys:    bson.D{{Key: "expires_at", Value: 1}},
+		Options: options.Index().SetExpireAfterSeconds(0).SetSparse(true),
 	}
 	if _, err := database.Collection("links").Indexes().CreateOne(ctx, anonLinksTTLIdx); err != nil {
 		return fmt.Errorf("anon links TTL index: %w", err)
