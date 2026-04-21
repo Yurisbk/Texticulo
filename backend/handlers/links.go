@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/json"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -30,12 +31,53 @@ type shortenResp struct {
 	ShortURL  string `json:"short_url"`
 }
 
+// publicBase is used for the redirect (API server URL).
 func publicBase() string {
 	b := strings.TrimRight(os.Getenv("PUBLIC_API_URL"), "/")
 	if b == "" {
 		b = "http://localhost:8080"
 	}
 	return b
+}
+
+// shortBase returns the domain used in displayed short URLs.
+// If SHORT_DOMAIN is set (e.g. "txt.io"), it builds "https://txt.io".
+// Otherwise falls back to publicBase().
+func shortBase() string {
+	d := strings.TrimSpace(os.Getenv("SHORT_DOMAIN"))
+	if d == "" {
+		return publicBase()
+	}
+	d = strings.TrimRight(d, "/")
+	if strings.Contains(d, "://") {
+		return d
+	}
+	return "https://" + d
+}
+
+// isPrivateHost checks if a URL host resolves to a private/loopback IP (SSRF guard).
+func isPrivateHost(host string) bool {
+	hostname := host
+	if h, _, err := net.SplitHostPort(host); err == nil {
+		hostname = h
+	}
+	if ip := net.ParseIP(hostname); ip != nil {
+		return ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsMulticast()
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	addrs, err := net.DefaultResolver.LookupHost(ctx, hostname)
+	if err != nil {
+		return false
+	}
+	for _, addr := range addrs {
+		if ip := net.ParseIP(addr); ip != nil {
+			if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func normalizeURL(raw string) (string, bool) {
@@ -48,6 +90,9 @@ func normalizeURL(raw string) (string, bool) {
 	}
 	u, err := url.Parse(raw)
 	if err != nil || u.Host == "" {
+		return "", false
+	}
+	if isPrivateHost(u.Host) {
 		return "", false
 	}
 	return u.String(), true
@@ -129,7 +174,7 @@ func (h *LinksHandler) Shorten(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(shortenResp{
 		ShortCode: code,
-		ShortURL:  publicBase() + "/" + code,
+		ShortURL:  shortBase() + "/" + code,
 	})
 }
 
@@ -176,13 +221,14 @@ func (h *LinksHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	out := make([]outRow, len(docs))
+	base := shortBase()
 	for i, doc := range docs {
 		out[i] = outRow{
 			ShortCode:   doc.ShortCode,
 			OriginalURL: doc.OriginalURL,
 			Clicks:      doc.Clicks,
 			CreatedAt:   doc.CreatedAt,
-			ShortURL:    publicBase() + "/" + doc.ShortCode,
+			ShortURL:    base + "/" + doc.ShortCode,
 		}
 	}
 
@@ -227,7 +273,8 @@ func (h *LinksHandler) Stats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if link.UserID == nil || *link.UserID != oid {
-		http.Error(w, `{"error":"forbidden"}`, http.StatusForbidden)
+		// Return 404 instead of 403 to avoid resource enumeration
+		http.Error(w, `{"error":"not_found"}`, http.StatusNotFound)
 		return
 	}
 
@@ -255,7 +302,7 @@ func (h *LinksHandler) Stats(w http.ResponseWriter, r *http.Request) {
 		"original_url":  link.OriginalURL,
 		"clicks":        link.Clicks,
 		"created_at":    link.CreatedAt,
-		"short_url":     publicBase() + "/" + code,
+		"short_url":     shortBase() + "/" + code,
 		"recent_clicks": recent,
 	})
 }
@@ -294,7 +341,7 @@ func (h *LinksHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if link.UserID == nil || *link.UserID != oid {
-		http.Error(w, `{"error":"forbidden"}`, http.StatusForbidden)
+		http.Error(w, `{"error":"not_found"}`, http.StatusNotFound)
 		return
 	}
 
@@ -307,8 +354,10 @@ func (h *LinksHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]string{"status": "deleted"})
 }
 
+// reservedShortCodes are codes the redirect handler must not process.
+// robots.txt and sitemap.xml are served by dedicated routes registered before /{code}.
 var reservedShortCodes = map[string]struct{}{
-	"api": {}, "health": {}, "robots.txt": {}, "favicon.ico": {}, "favicon.svg": {},
+	"api": {}, "health": {}, "favicon.ico": {}, "favicon.svg": {},
 }
 
 func (h *LinksHandler) Redirect(w http.ResponseWriter, r *http.Request) {

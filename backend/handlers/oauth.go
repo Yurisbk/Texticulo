@@ -82,16 +82,10 @@ func (h *OAuthHandler) redirectFrontendError(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *OAuthHandler) redirectFrontendSuccess(w http.ResponseWriter, r *http.Request, token, email string) {
-	u, err := url.Parse(strings.TrimRight(h.FrontendURL, "/") + "/login")
-	if err != nil {
-		http.Error(w, "config error", http.StatusInternalServerError)
-		return
-	}
-	q := u.Query()
-	q.Set("token", token)
-	q.Set("email", email)
-	u.RawQuery = q.Encode()
-	http.Redirect(w, r, u.String(), http.StatusFound)
+	// Use URL fragment so the JWT never reaches any server log (A02 — Cryptographic Failures).
+	base := strings.TrimRight(h.FrontendURL, "/") + "/login"
+	fragment := "token=" + url.QueryEscape(token) + "&email=" + url.QueryEscape(email)
+	http.Redirect(w, r, base+"#"+fragment, http.StatusFound)
 }
 
 // GoogleStart redirects to Google OAuth consent screen.

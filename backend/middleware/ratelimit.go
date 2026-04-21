@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -28,7 +29,7 @@ func ShortenRateLimit(limit int, window time.Duration) func(http.Handler) http.H
 			}
 			ip := r.RemoteAddr
 			if xf := r.Header.Get("X-Forwarded-For"); xf != "" {
-				ip = xf
+				ip = strings.TrimSpace(strings.Split(xf, ",")[0])
 			}
 			now := time.Now()
 			shortenLimiter.mu.Lock()

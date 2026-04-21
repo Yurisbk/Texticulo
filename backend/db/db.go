@@ -79,11 +79,26 @@ func Migrate(database *mongo.Database) error {
 		return fmt.Errorf("clicks link_id index: %w", err)
 	}
 
-	clicksDateIdx := mongo.IndexModel{
-		Keys: bson.D{{Key: "clicked_at", Value: 1}},
+	// TTL index: clicks expire after 5 hours to save space.
+	// Drop the plain clicked_at index first (if it exists) so we can replace it with a TTL version.
+	_, _ = database.Collection("clicks").Indexes().DropOne(ctx, "clicked_at_1")
+	clicksTTLIdx := mongo.IndexModel{
+		Keys:    bson.D{{Key: "clicked_at", Value: 1}},
+		Options: options.Index().SetExpireAfterSeconds(5 * 3600),
 	}
-	if _, err := database.Collection("clicks").Indexes().CreateOne(ctx, clicksDateIdx); err != nil {
-		return fmt.Errorf("clicks clicked_at index: %w", err)
+	if _, err := database.Collection("clicks").Indexes().CreateOne(ctx, clicksTTLIdx); err != nil {
+		return fmt.Errorf("clicks TTL index: %w", err)
+	}
+
+	// TTL index: anonymous links (no user_id) expire after 48 hours.
+	anonLinksTTLIdx := mongo.IndexModel{
+		Keys: bson.D{{Key: "created_at", Value: 1}},
+		Options: options.Index().
+			SetExpireAfterSeconds(48 * 3600).
+			SetPartialFilterExpression(bson.D{{Key: "user_id", Value: bson.D{{Key: "$exists", Value: false}}}}),
+	}
+	if _, err := database.Collection("links").Indexes().CreateOne(ctx, anonLinksTTLIdx); err != nil {
+		return fmt.Errorf("anon links TTL index: %w", err)
 	}
 
 	return nil

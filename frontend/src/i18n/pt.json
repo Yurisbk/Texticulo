@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Texticulo",
-    "tagline": "Encurte links em segundos."
+    "tagline": "Tamanho importa."
   },
   "nav": {
     "home": "Início",
@@ -23,10 +23,26 @@
   },
   "auth": {
     "loginTitle": "Entrar",
+    "registerTitle": "Criar conta",
+    "subtitle": "Entre ou crie uma conta gratuita.",
     "oauthSubtitle": "Entre com sua conta Google.",
     "googleLogin": "Entrar com Google",
+    "orDivider": "ou",
+    "emailLabel": "E-mail",
+    "passwordLabel": "Senha",
+    "passwordHint": "Mínimo 8 caracteres e um dígito.",
+    "submitLogin": "Entrar",
+    "submitRegister": "Criar conta",
+    "switchToRegister": "Não tem conta? Cadastre-se",
+    "switchToLogin": "Já tem conta? Entre",
     "oauthError": "Não foi possível concluir o login. Tente novamente.",
-    "oauthDenied": "Login cancelado no provedor."
+    "oauthDenied": "Login cancelado no provedor.",
+    "weakPassword": "A senha precisa ter ao menos 8 caracteres e um dígito.",
+    "emailTaken": "Este e-mail já está cadastrado.",
+    "invalidCredentials": "E-mail ou senha incorretos.",
+    "useGoogle": "Esta conta usa o Google para entrar. Por favor, continue com Google.",
+    "tooManyAttempts": "Muitas tentativas. Tente novamente em 10 minutos.",
+    "loginError": "Não foi possível entrar. Tente novamente."
   },
   "dashboard": {
     "title": "Meus links",

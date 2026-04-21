@@ -75,6 +75,38 @@ export async function deleteLink(code: string, token: string): Promise<void> {
   if (!res.ok) throw new Error("delete_failed");
 }
 
+export type AuthResponse = { token: string; email: string };
+
+export async function loginEmail(email: string, password: string): Promise<AuthResponse> {
+  const res = await fetch(apiUrl("/api/auth/login"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  if (res.status === 429) throw new Error("too_many_attempts");
+  if (res.status === 401) {
+    const data = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(data.error ?? "invalid_credentials");
+  }
+  if (!res.ok) throw new Error("login_failed");
+  return res.json() as Promise<AuthResponse>;
+}
+
+export async function registerEmail(email: string, password: string): Promise<AuthResponse> {
+  const res = await fetch(apiUrl("/api/auth/register"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  if (res.status === 409) throw new Error("email_taken");
+  if (res.status === 400) {
+    const data = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(data.error ?? "register_failed");
+  }
+  if (!res.ok) throw new Error("register_failed");
+  return res.json() as Promise<AuthResponse>;
+}
+
 export type MetricsResponse = {
   total_links: number;
   total_clicks: number;

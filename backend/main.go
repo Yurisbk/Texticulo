@@ -1,11 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
@@ -53,6 +56,13 @@ func main() {
 	}
 
 	r := chi.NewRouter()
+
+	// Global middleware
+	r.Use(chiMiddleware.RequestID)
+	r.Use(chiMiddleware.RealIP)
+	r.Use(chiMiddleware.Logger)
+	r.Use(chiMiddleware.Recoverer)
+	r.Use(middleware.SecurityHeaders)
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "OPTIONS", "PUT", "DELETE"},
@@ -61,12 +71,41 @@ func main() {
 		MaxAge:           300,
 	}))
 
+	// SEO
+	publicURL := strings.TrimRight(os.Getenv("PUBLIC_API_URL"), "/")
+	if publicURL == "" {
+		publicURL = "http://localhost:8080"
+	}
+	r.Get("/robots.txt", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		fmt.Fprintf(w, "User-agent: *\nAllow: /\nSitemap: %s/sitemap.xml\n", publicURL)
+	})
+	r.Get("/sitemap.xml", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/xml; charset=utf-8")
+		fmt.Fprintf(w, `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>%s</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>`, strings.TrimRight(os.Getenv("FRONTEND_URL"), ","))
+	})
+
 	r.Get("/health", handlers.Health)
 
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/metrics", metricsHandler.Metrics)
+
+		// Google OAuth
 		r.Get("/auth/google", oauth.GoogleStart)
 		r.Get("/auth/google/callback", oauth.GoogleCallback)
+
+		// Email/password auth (public)
+		r.Post("/auth/register", auth.Register)
+		r.Post("/auth/login", auth.Login)
+
+		// Authenticated routes
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.AuthRequired)
 			r.Get("/auth/me", auth.Me)
@@ -74,9 +113,11 @@ func main() {
 			r.Get("/links/{code}/stats", links.Stats)
 			r.Delete("/links/{code}", links.Delete)
 		})
+
+		// Shorten — auth optional, rate-limited to 15 req/min
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.AuthOptional)
-			r.With(middleware.ShortenRateLimit(30, time.Minute)).Post("/shorten", links.Shorten)
+			r.With(middleware.ShortenRateLimit(15, time.Minute)).Post("/shorten", links.Shorten)
 		})
 	})
 

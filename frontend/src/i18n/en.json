@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Texticulo",
-    "tagline": "Shorten links in seconds."
+    "tagline": "Size DOES matter."
   },
   "nav": {
     "home": "Home",
@@ -23,10 +23,26 @@
   },
   "auth": {
     "loginTitle": "Log in",
+    "registerTitle": "Create account",
+    "subtitle": "Sign in or create a free account.",
     "oauthSubtitle": "Sign in with your Google account.",
     "googleLogin": "Continue with Google",
+    "orDivider": "or",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "passwordHint": "At least 8 characters and one digit.",
+    "submitLogin": "Log in",
+    "submitRegister": "Create account",
+    "switchToRegister": "Don't have an account? Sign up",
+    "switchToLogin": "Already have an account? Log in",
     "oauthError": "Could not complete sign-in. Try again.",
-    "oauthDenied": "Sign-in was cancelled."
+    "oauthDenied": "Sign-in was cancelled.",
+    "weakPassword": "Password must be at least 8 characters and contain a digit.",
+    "emailTaken": "This email is already registered.",
+    "invalidCredentials": "Incorrect email or password.",
+    "useGoogle": "This account uses Google sign-in. Please continue with Google.",
+    "tooManyAttempts": "Too many failed attempts. Try again in 10 minutes.",
+    "loginError": "Could not sign in. Try again."
   },
   "dashboard": {
     "title": "My links",
